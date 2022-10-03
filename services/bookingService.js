@@ -96,19 +96,18 @@ const createTicket = async (account_id, scheduleId, adultNumber, teenagerNumber,
     TEENAGER: 10000,
     KID: 7000,
   };
-  const userId = await bookingDao.getUserIdByAccountId(account_id);
 
-  const createBookingId = await bookingDao.createBookingId(userId, scheduleId); // 1. booking테이블생성
-  const bookingId = await bookingDao.getBookingId(userId, scheduleId); // 2.booking 테이블의 ID 조회
+  const userId = await bookingDao.getUserIdByAccountId(account_id);
+  const bookingId = await bookingDao.createBookingId(userId, scheduleId);
   const ticketType = await getTicketType(adultNumber, teenagerNumber, kidNumber);
 
   const seatId = [];
+
   for (let i = 0; i < seatsName.length; i++) {
-    const getSeatId = await bookingDao.getSeatId(scheduleId, seatsName[i]); // 3. 입력한 seat의 id 값 확인
+    const getSeatId = await bookingDao.getSeatId(scheduleId, seatsName[i]);
     seatId.push(getSeatId[0]);
   }
 
-  // 4. 불러온 seatId와 ticketType를 넣어 티켓 생성
   for (let i = 0; i < seatId.length; i++) {
     if (ticketType[i] === '일반') {
       await bookingDao.createTicket(priceType.ADULT, seatId[i], bookingId, ticketType[i]);
