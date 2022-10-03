@@ -96,6 +96,7 @@ const getSeatsByScheduleId = async (scheduleId) => {
       schedule.id as schedule_id,
       date_format(schedule.watch_date, '%Y-%m-%d') as watch_date,
       movies.title,
+      movies.poster_img,
       theater_area.area_name,
       theaters.theater_name,
       theater_screens.screen_name,
@@ -152,26 +153,7 @@ const createBookingId = async (userId, scheduleId) => {
     `,
       [userId, scheduleId]
     );
-    return createBookingId;
-  } catch (err) {
-    throw new BaseError('INVALID_DATA_INPUT', 500);
-  }
-};
-
-const getBookingId = async (userId, scheduleId) => {
-  try {
-    const [bookingId] = await myDataSource.query(
-      `
-    SELECT
-    bookings.id
-    FROM
-    bookings
-    WHERE user_Id = ?
-    AND schedule_id = ?
-    `,
-      [userId, scheduleId]
-    );
-    return Object.values(bookingId)[0];
+    return createBookingId.insertId;
   } catch (err) {
     throw new BaseError('INVALID_DATA_INPUT', 500);
   }
@@ -215,6 +197,7 @@ const getSeatId = async (scheduleId, seatsName) => {
 
 const getTickets = async (account_id) => {
   try {
+    console.log('11111', account_id);
     const tickets = await myDataSource.query(
       `SELECT
       bookings.id as booking_id,
@@ -245,7 +228,8 @@ const getTickets = async (account_id) => {
       LEFT JOIN schedule ON bookings.schedule_id = schedule.id
       LEFT JOIN users ON users.id = bookings.user_id
       WHERE users.account_id = ?
-      GROUP BY bookings.id`,
+      GROUP BY bookings.id
+      ORDER BY timestamp DESC`,
       [account_id]
     );
     return tickets;
@@ -279,7 +263,6 @@ module.exports = {
   getTimeSchedule,
   getSeatsByScheduleId,
   createBookingId,
-  getBookingId,
   createTicket,
   getSeatId,
   getTickets,

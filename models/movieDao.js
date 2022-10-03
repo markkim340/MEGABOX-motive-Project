@@ -177,7 +177,7 @@ const existCheckMovieLike = async (userId, movieId) => {
 
 const createMovieLike = async (userId, movieId) => {
   try {
-    const test = await myDataSource.query(
+    await myDataSource.query(
       `
       INSERT INTO
       users_movies_likes
