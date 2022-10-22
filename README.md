@@ -232,15 +232,106 @@
       좌석은 A1부터 E20까지 100자리로 전체 통일하였다.
       
 ### 2. 상영스케쥴 필터 조회
-  <스케쥴쿼리 1차 사진>
+
+- **models/bookingDao.js**
   
-### 3. 상영스케쥴별 좌석정보 전달과 티켓생성
+
+```javascript
+const getTimeSchedule = async (filter) => {
+  try {
+    const timeSchedule = await myDataSource.query(`
+      SELECT
+      id as schedule_id,
+      title,
+      theater_name,
+      screen_name,
+      start_time,
+      end_time,
+        (SELECT COUNT(*) FROM seats WHERE theater_screen_id = schedule.theater_screen_id) as total_seat,
+        (SELECT COUNT(*)
+        FROM starbox.bookings
+        LEFT JOIN tickets ON tickets.booking_id = bookings.id
+        WHERE schedule_id = schedule.id) as booked_seat
+      FROM 
+      schedule
+      ${filter}
+      ORDER BY start_time
+      `);
+    return timeSchedule;
+  } catch (err) {
+    throw new BaseError('INVALID_DATA_INPUT', 500);
+  }
+};
+```
+
+상영스케쥴을 조회하는 SQL 문을 작성하였다. WHERE 조건문의 자리엔 service모듈에서 filter 파라미터를 전달받는다.
+
+- **services/bookingService.js**
+  
+
+```javascript
+const getTimeTables = async (date, movieId, areaId, theaterId) => {
+  const filterType = {
+    DATE: `WHERE watch_date = "${date}"`,
+    MOVIE_ID: `AND movie_id IN (${movieId})`,
+    AREA_ID: `AND area_id = "${areaId}"`,
+    THEATER_ID: `AND theater_id IN (${theaterId})`,
+  };
+
+  let result = '';
+
+  if (!date || !areaId) {
+    return '';
+  }
+
+  if (date && movieId && areaId && theaterId) {
+    result = filterType.DATE + filterType.MOVIE_ID + filterType.AREA_ID + filterType.THEATER_ID;
+    return await bookingDao.getTimeSchedule(result);
+  }
+
+  if (date && areaId && theaterId) {
+    result = filterType.DATE + filterType.AREA_ID + filterType.THEATER_ID;
+    return await bookingDao.getTimeSchedule(result);
+  }
+
+  if (date && areaId && movieId) {
+    result = filterType.DATE + filterType.AREA_ID + filterType.MOVIE_ID;
+    return await bookingDao.getTimeSchedule(result);
+  }
+};
+```
+
+SQL문 WHERE의 위치로 전달되는 파라미터를 IF문을 통해 여러가지 경우의 수로 생성하여 리턴값을 담는다.
+
+- **services/bookingService.js**
+  
+  ```javascript
+  const getSchedule = async (date, movieId, areaId, theaterId) => {
+    const movieFilter = await getMovieFilter(date);
+    const areaFilter = await getAreaFilter(date, movieId);
+  
+    const movies = await bookingDao.getMovies(movieFilter);
+    const areas = await bookingDao.getAreas(areaFilter);
+    const therters = await getTheater(areaId);
+    const timeTables = await getTimeTables(date, movieId, areaId, theaterId);
+  
+    return {
+      movies: movies,
+      areas: areas,
+      theaters: therters,
+      timeTables: timeTables,
+    };
+  };
+  ```
+  getTimeTables 함수를 통해 만들어진 리턴값을 timeTables변수에 전달한다.
+  
+### 3. 티켓발급
   </br>
 <img width="500" alt="스크린샷 2022-10-22 오후 6 58 12" src="https://user-images.githubusercontent.com/70873668/197333247-ef455ae0-1225-44d0-8ad8-d830c192ecda.png">
   
-  - 처음에 만든 테이블은 tickets 테이블이 없이 bookings 테이블 까지만 만들었다. booking 테이블 자체에서 예약정보를 다 전달해 줄 계획이었다.</br>
-  그런데 예약정보를 전달하려 보니 좌석타입별(성인,유아)금액 구분도 불가능했고, seats테이블의 좌석별 id와 join하여 예약정보에 담는 방법이 어려웠다.</br>
-  그래서 tickets 라는 테이블을 추가하였고, 예약시 booking_id를 먼저 생성한 뒤 tickets 테이블에 booking_id를 가져오는 방식으로 코드를 작성하였다.</br>
+  - 처음에 만든 테이블은 tickets 테이블이 없이 bookings 테이블 까지만 만들었다. booking 테이블 자체에서 예약정보를 다 만들어 전달해 줄 계획이었다.</br>
+  그런데 예약정보를 전달하려보니 좌석타입별(성인,유아)금액 구분도 불가능했고, seats테이블의 좌석별 id와 join하여 하나의 예약정보에 담는 방법이 어려웠다.</br>
+  그래서 tickets 라는 테이블을 추가하였고, 예약시 booking_id가 먼저 생성된 뒤 tickets를 좌석별로 발급받아 booking_id와 테이블을 연결하는 방식으로 코드를 작성하였다.</br>
 이렇게 하니 하나의 booking_id를 통해 예약한 tickets의 정보를 모두 가져올 수 있어 예약정보를 전달하기가 좋았다.
     
 
