@@ -31,7 +31,7 @@
 
 ## 🎬 2. 데이터 모델링
 
-▶️ [dbdiogram 링크](https://dbdiagram.io/d/6328594d0911f91ba5e24b09)
+▶️ [dbdiagram 링크](https://dbdiagram.io/d/6328594d0911f91ba5e24b09)
 </br>
 ![Starbox_dbdiagram](https://user-images.githubusercontent.com/70873668/197322397-38c2fab9-b54a-4e07-ba03-fd53809de941.png)
 </br>
