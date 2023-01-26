@@ -132,6 +132,7 @@
 ▶️[ POSTMAN API Docs 링크](https://documenter.getpostman.com/view/22703204/2s7ZE4NQnp)
 
 <img width="1000" alt="postman" src="https://user-images.githubusercontent.com/70873668/197322498-e2088ff1-e29c-404a-9f15-948b030e1057.png">
+
 ## 🔷 Reference
 
 - 이 프로젝트는 [메가박스](https://www.megabox.co.kr/) 사이트를 참조하여 학습목적으로 만들었습니다.
